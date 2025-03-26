@@ -21,6 +21,7 @@ main.log
 notebooks/side_by_side.ipynb
 
 /custom_inputs
+/data
 
 # /sruns_rodrigo
 *.mp4
