@@ -42,56 +42,18 @@
 
 Current audio-driven facial animation methods achieve impressive results for short videos but suffer from error accumulation and identity drift when extended to longer durations. Existing methods attempt to mitigate this through external spatial control, increasing long-term consistency but compromising the naturalness of motion. We propose KeyFace, a novel two-stage diffusion-based framework, to address these issues. In the first stage, keyframes are generated at a low frame rate, conditioned on audio input and an identity frame, to capture essential facial expressions and movements over extended periods of time. In the second stage, an interpolation model fills in the gaps between keyframes, ensuring smooth transitions and temporal coherence. To further enhance realism, we incorporate continuous emotion representations and handle a wide range of non-speech vocalizations (NSVs), such as laughter and sighs. We also introduce two new evaluation metrics for assessing lip synchronization and NSV generation. Experimental results show that KeyFace outperforms state-of-the-art methods in generating natural, coherent facial animations over extended durations, successfully encompassing NSVs and continuous emotions.
 
-## Demo Examples
+### Media
 
-<div align="center">
-  <table>
-    <tr>
-      <td>
-        <video width="100%" autoplay loop muted playsinline>
-          <source src="https://antonibigata.github.io/KeyFace/static/videos/front_row_1/example_1.mp4" type="video/mp4">
-        </video>
-      </td>
-      <td>
-        <video width="100%" autoplay loop muted playsinline>
-          <source src="https://antonibigata.github.io/KeyFace/static/videos/front_row_1/example_3.mp4" type="video/mp4">
-        </video>
-      </td>
-      <td>
-        <video width="100%" autoplay loop muted playsinline>
-          <source src="https://antonibigata.github.io/KeyFace/static/videos/front_row_1/example_5.mp4" type="video/mp4">
-        </video>
-      </td>
-      <td>
-        <video width="100%" autoplay loop muted playsinline>
-          <source src="https://antonibigata.github.io/KeyFace/static/videos/front_row_1/example_4.mp4" type="video/mp4">
-        </video>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <video width="100%" autoplay loop muted playsinline>
-          <source src="https://antonibigata.github.io/KeyFace/static/videos/front_row_2/example_1.mp4" type="video/mp4">
-        </video>
-      </td>
-      <td>
-        <video width="100%" autoplay loop muted playsinline>
-          <source src="https://antonibigata.github.io/KeyFace/static/videos/front_row_2/example_2.mp4" type="video/mp4">
-        </video>
-      </td>
-      <td>
-        <video width="100%" autoplay loop muted playsinline>
-          <source src="https://antonibigata.github.io/KeyFace/static/videos/front_row_2/example_5.mp4" type="video/mp4">
-        </video>
-      </td>
-      <td>
-        <video width="100%" autoplay loop muted playsinline>
-          <source src="https://antonibigata.github.io/KeyFace/static/videos/front_row_2/example_4.mp4" type="video/mp4">
-        </video>
-      </td>
-    </tr>
-  </table>
-</div>
+<table>
+  <tr>
+    <td><img src="assets/media/video_1.gif" alt="Video 1"/></td>
+    <td><img src="assets/media/video_2.gif" alt="Video 2"/></td>
+    <td><img src="assets/media/video_3.gif" alt="Video 3"/></td>
+    <td><img src="assets/media/video_4.gif" alt="Video 4"/></td>
+  </tr>
+</table>
+
+For more visualizations, please visit [https://antonibigata.github.io/KeyFace/](https://antonibigata.github.io/KeyFace/)
 
 ## Architecture
 
