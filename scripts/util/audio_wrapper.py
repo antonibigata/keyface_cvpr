@@ -72,7 +72,7 @@ class AudioWrapper(nn.Module):
                 model_size="Base+",
                 feed_as_frames=False,
                 merge_type="None",
-                model_path="/vol/paramonos2/projects/antoni/code/Personal/keyface/checkpoints/WavLM-Base+.pt",
+                model_path="",
             )
             self.encode_audio = self.wavlm_encoding
         elif model_type == "wav2vec2":
@@ -94,7 +94,7 @@ class AudioWrapper(nn.Module):
             self.model = BEATWrapper(
                 fine_tuned=True,
                 feed_as_frames=False,
-                model_path="/vol/paramonos2/projects/antoni/code/Personal/keyface/checkpoints/BEATs_iter3_plus_AS2M_finetuned_on_AS2M_cpt2.pt",
+                model_path="pretrained_models/checkpoints/BEATs_iter3_plus_AS2M_finetuned_on_AS2M_cpt2.pt",
             )
             self.encode_audio = self.beats_encoding
         else:

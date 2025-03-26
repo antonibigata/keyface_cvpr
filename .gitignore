@@ -22,6 +22,7 @@ notebooks/side_by_side.ipynb
 
 /custom_inputs
 /data
+/pretrained_models
 
 # /sruns_rodrigo
 *.mp4

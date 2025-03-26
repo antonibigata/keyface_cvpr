@@ -14,6 +14,8 @@
     <a href="https://scholar.google.com/citations?user=ygpxbK8AAAAJ" target="_blank">Maja Pantic</a><sup>1</sup>
 </div>
 
+<br>
+
 <div align="center">
 <div class="is-size-5 publication-authors" style="margin-top: 1rem;">
           <span class="author-block"><sup>1</sup>Imperial College London,</span>
@@ -22,9 +24,13 @@
 </div>
 </div>
 
+<br>
+
 <div align="center">
     <a href="https://antonibigata.github.io/KeyFace/"><img src="https://img.shields.io/badge/Project-Page-blue"></a>
+    &nbsp;&nbsp;&nbsp;
     <a href="https://huggingface.co/toninio19/keyface"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-Model-yellow"></a>
+    &nbsp;&nbsp;&nbsp;
     <a href="https://arxiv.org/abs/2503.01715"><img src="https://img.shields.io/badge/Paper-Arxiv-red"></a>
 </div>
 

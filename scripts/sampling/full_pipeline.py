@@ -516,11 +516,6 @@ def sample_keyframes(
         C = 4
         shape = (num_frames, C, H // F, W // F)
 
-        if fps_id < 5:
-            print("WARNING: Small fps value! This may lead to suboptimal performance.")
-        if fps_id > 30:
-            print("WARNING: Large fps value! This may lead to suboptimal performance.")
-
         audio_cond = audio_list[i].unsqueeze(0)
 
         value_dict = {}
@@ -716,15 +711,6 @@ def sample_interpolation(
     C = 4
     shape = (num_frames * audio_cond.shape[0], C, H // F, W // F)
 
-    if (H, W) != (576, 1024):
-        print(
-            "WARNING: The conditioning frame you provided is not 576x1024. This leads to suboptimal performance as model was only trained on 576x1024. Consider increasing `cond_aug`."
-        )
-
-    if fps_id < 5:
-        print("WARNING: Small fps value! This may lead to suboptimal performance.")
-    if fps_id > 30:
-        print("WARNING: Large fps value! This may lead to suboptimal performance.")
     # Prepare value dictionary for conditioning
     value_dict = {
         "fps_id": fps_id,
