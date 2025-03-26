@@ -1,0 +1,29 @@
+# extensions
+*.egg-info
+*.py[cod]
+
+# envs
+.pt13
+.pt2
+
+# directories
+/checkpoints
+/dist
+/outputs
+/build
+/videos
+/logs
+/images
+__pycache__/
+/wandb
+main.log
+"notebooks/side_by_side copy.ipynb"
+notebooks/side_by_side.ipynb
+
+/custom_inputs
+
+# /sruns_rodrigo
+*.mp4
+*.pt
+*.png
+*.pth

@@ -1,0 +1,249 @@
+model:
+  base_learning_rate: 3.e-5
+  target: sgm.models.diffusion.DiffusionEngine
+  params:
+    input_key: latents
+    no_log_keys: [audio_emb, fps_id, motion_bucket_id, cond_aug]
+    scale_factor: 0.18215
+    disable_first_stage_autocast: True
+    ckpt_path: checkpoints/svd_no_emb.safetensors
+    remove_keys_from_weights: [model.diffusion_model.input_blocks.0.0.weight, model.diffusion_model.label_emb.0.0.weight]
+    compile_model: False
+
+    scheduler_config:
+      target: sgm.lr_scheduler.LambdaLinearScheduler
+      params:
+        warm_up_steps: [1000]
+        cycle_lengths: [10000000000000]
+        f_start: [1.e-6]
+        f_max: [1.]
+        f_min: [1.]
+
+    to_freeze: []
+    to_unfreeze: []
+
+    denoiser_config:
+      target: sgm.modules.diffusionmodules.denoiser.Denoiser
+      params:
+        scaling_config:
+          target: sgm.modules.diffusionmodules.denoiser_scaling.VScalingWithEDMcNoise
+
+    network_wrapper: 
+      target: sgm.modules.diffusionmodules.wrappers.InterpolationWrapper
+      params:
+        im_size: [512, 512] # USER: adapt this to your dataset
+        n_channels: 4
+        starting_mask_method: zeros
+        add_mask: True
+        fix_image_leak: False
+
+    network_config:
+      target: sgm.modules.diffusionmodules.video_model.VideoUNet
+      params:
+        adm_in_channels: 0
+        num_classes: sequential
+        use_checkpoint: True
+        in_channels: 9
+        out_channels: 4
+        model_channels: 320
+        attention_resolutions: [4, 2, 1]
+        num_res_blocks: 2
+        channel_mult: [1, 2, 4, 4]
+        num_head_channels: 64
+        use_linear_in_transformer: True
+        transformer_depth: 1
+        context_dim: 1024
+        spatial_transformer_attn_type: softmax-xformers
+        extra_ff_mix_layer: True
+        use_spatial_context: True
+        merge_strategy: learned_with_images
+        video_kernel_size: [3, 1, 1]
+        fine_tuning_method: null
+        audio_cond_method: to_time_emb
+        additional_audio_frames: 0
+        audio_dim: 1024
+        unfreeze_blocks: ["input"] # Because we changed the input block
+
+    conditioner_config:
+      target: sgm.modules.GeneralConditioner
+      params:
+        emb_models:
+        - input_key: cond_frames
+          is_trainable: False
+          ucg_rate: 0.1
+          target: sgm.modules.encoders.modules.VideoPredictionEmbedderWithEncoder
+          params:
+            disable_encoder_autocast: True
+            n_cond_frames: 2
+            n_copies: 1
+            is_ae: True
+            load_encoder: False
+            encoder_config:
+              target: sgm.models.autoencoder.AutoencoderKLModeOnly
+              params:
+                embed_dim: 4
+                monitor: val/rec_loss
+                ddconfig:
+                  attn_type: vanilla-xformers
+                  double_z: True
+                  z_channels: 4
+                  resolution: 256
+                  in_channels: 3
+                  out_ch: 3
+                  ch: 128
+                  ch_mult: [1, 2, 4, 4]
+                  num_res_blocks: 2
+                  attn_resolutions: []
+                  dropout: 0.0
+                lossconfig:
+                  target: torch.nn.Identity
+
+        - input_key: audio_emb
+          is_trainable: True
+          ucg_rate: 0.2
+          target: sgm.modules.encoders.modules.WhisperAudioEmbedder
+          params:
+            merge_method: mean 
+            linear_dim: 1024
+            cond_type: crossattn
+            audio_dim: 1536
+
+    first_stage_config:
+      target: sgm.models.autoencoder.AutoencodingEngine
+      params:
+        loss_config:
+          target: torch.nn.Identity
+        regularizer_config:
+          target: sgm.modules.autoencoding.regularizers.DiagonalGaussianRegularizer
+        encoder_config: 
+          target: sgm.modules.diffusionmodules.model.Encoder
+          params:
+            attn_type: vanilla
+            double_z: True
+            z_channels: 4
+            resolution: 256
+            in_channels: 3
+            out_ch: 3
+            ch: 128
+            ch_mult: [1, 2, 4, 4]
+            num_res_blocks: 2
+            attn_resolutions: []
+            dropout: 0.0
+        decoder_config:
+          target: sgm.modules.autoencoding.temporal_ae.VideoDecoder
+          params:
+            attn_type: vanilla
+            double_z: True
+            z_channels: 4
+            resolution: 256
+            in_channels: 3
+            out_ch: 3
+            ch: 128
+            ch_mult: [1, 2, 4, 4]
+            num_res_blocks: 2
+            attn_resolutions: []
+            dropout: 0.0
+            video_kernel_size: [3, 1, 1]
+
+    sampler_config:
+      target: sgm.modules.diffusionmodules.sampling.EulerEDMSampler
+      params:
+        num_steps: 10
+        discretization_config:
+          target: sgm.modules.diffusionmodules.discretizer.AYSDiscretization
+
+        guider_config:
+          target: sgm.modules.diffusionmodules.guiders.LinearPredictionGuider
+          params:
+            max_scale: 2.5
+            min_scale: 1.0
+            num_frames: 14
+
+    loss_fn_config:
+      target: sgm.modules.diffusionmodules.loss.StandardDiffusionLoss
+      params:  
+        lambda_lower: 1.      
+        batch2model_keys:
+          - image_only_indicator
+          - num_video_frames
+        loss_weighting_config:
+          target: sgm.modules.diffusionmodules.loss_weighting.VWeighting
+        sigma_sampler_config:
+          target: sgm.modules.diffusionmodules.sigma_sampling.EDMSampling
+          params:
+            p_mean: 1.
+            p_std: 1.2
+
+data:
+  target: sgm.data.video_datamodule_latent.VideoDataModule
+  params:
+    train:
+      datapipeline:
+        filelist: 
+        resize_size: 512
+        audio_folder: audio
+        video_folder: cropped_videos_original
+        audio_emb_folder: null
+        video_extension: .mp4
+        audio_extension: .wav
+        latent_folder: null
+        audio_in_video: False
+        audio_rate: 16000
+        num_frames: 14
+        need_cond: True
+        mode: interpolation
+        use_latent: True
+        latent_type: video
+        latent_scale: 1  # For backwards compatibility
+        from_audio_embedding: True
+        load_all_possible_indexes: False
+        audio_emb_type: wav2vec2
+        # cond_noise: [-3.0, 0.5]
+        cond_noise: 0.
+        motion_id: 125
+        data_mean: null
+        data_std: null
+        use_latent_condition: True
+        get_original_frames: False
+
+      loader:
+        batch_size: 1
+        num_workers: 6
+        drop_last: True
+        pin_memory: True
+        persistent_workers: True
+
+lightning:
+  modelcheckpoint:
+    params:
+      every_n_train_steps: 5000
+      save_top_k: 1
+
+  callbacks:
+    metrics_over_trainsteps_checkpoint:
+      params:
+        every_n_train_steps: 25000
+
+    video_logger:
+      target: sgm.callbacks.video_logger.VideoLogger
+      params:
+        disabled: False
+        enable_autocast: False
+        batch_frequency: 1000
+        max_videos: 1
+        increase_log_steps: False
+        log_first_step: True
+        log_videos_kwargs:
+          ucg_keys: [cond_frames, cond_frames_without_noise, audio_emb]
+          use_ema_scope: False
+          N: 1
+          n_rows: 1
+
+  trainer:
+    devices: -1
+    benchmark: False
+    num_sanity_val_steps: 1
+    accumulate_grad_batches: 1
+    max_epochs: 1000
+    precision: bf16-mixed
+    num_nodes: 1
