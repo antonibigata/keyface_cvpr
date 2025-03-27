@@ -82,10 +82,10 @@ conda create -n keyface python=3.11 nvidia::cuda-nvcc conda-forge::ffmpeg -y
 conda activate keyface
 
 # Install requirements
-pip install -r requirements.txt --no-deps
+python -m pip install -r requirements.txt --no-deps
 
 # Install PyTorch with CUDA support
-pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu121
+python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu121
 ```
 
 ### Download Pretrained Models
