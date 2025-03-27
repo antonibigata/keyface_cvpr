@@ -115,13 +115,13 @@ For inference you need to have the audio and video embeddings precomputed.
 The simplest way to run inference on your own data is using the `infer_raw_data.sh` script which will compute those embeddings for you:
 
 ```bash
-./scripts/infer_raw_data.sh \
-  --video_dir="data/videos" \
-  --audio_dir="data/audios" \
-  --output_folder="my_animations" \
-  --keyframes_ckpt="path/to/keyframes_model.ckpt" \
-  --interpolation_ckpt="path/to/interpolation_model.ckpt" \
-  --compute_until=45
+bash scripts/infer_raw_data.sh \
+  --video_dir "data/videos" \
+  --audio_dir "data/audios" \
+  --output_folder "my_animations" \
+  --keyframes_ckpt "path/to/keyframes_model.ckpt" \
+  --interpolation_ckpt "path/to/interpolation_model.ckpt" \
+  --compute_until 45
 ```
 
 This script handles the entire pipeline:
@@ -133,7 +133,7 @@ This script handles the entire pipeline:
 For more control over the inference process, you can directly use the `inference.sh` script:
 
 ```bash
-./scripts/inference.sh \
+bash scripts/inference.sh \
   output_folder_name \
   path/to/filelist.txt \
   path/to/keyframes_model.ckpt \
@@ -157,13 +157,13 @@ KeyFace uses a two-stage model approach. You can train each component separately
 #### Keyframe Model Training
 
 ```bash
-./train_keyframe.sh path/to/filelist.txt [num_workers] [batch_size] [num_devices]
+bash train_keyframe.sh path/to/filelist.txt [num_workers] [batch_size] [num_devices]
 ```
 
 #### Interpolation Model Training
 
 ```bash
-./train_interpolation.sh path/to/filelist.txt [num_workers] [batch_size] [num_devices]
+bash train_interpolation.sh path/to/filelist.txt [num_workers] [batch_size] [num_devices]
 ```
 
 ## Advanced Usage
