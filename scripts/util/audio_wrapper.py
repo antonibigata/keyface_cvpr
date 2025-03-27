@@ -72,7 +72,7 @@ class AudioWrapper(nn.Module):
                 model_size="Base+",
                 feed_as_frames=False,
                 merge_type="None",
-                model_path="",
+                model_path="pretrained_models/checkpoints/WavLM-Base+.pt",
             )
             self.encode_audio = self.wavlm_encoding
         elif model_type == "wav2vec2":

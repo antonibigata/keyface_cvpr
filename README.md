@@ -88,6 +88,17 @@ python -m pip install -r requirements.txt --no-deps
 python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu121
 ```
 
+### Known Issues
+
+If you encounter synchronization issues between omegaconf and antlr4, you can fix them by running:
+
+
+```bash
+python -m pip uninstall omegaconf antlr4-python3-runtime -y
+python -m pip install "omegaconf==2.3.0" "antlr4-python3-runtime==4.9.3"
+```
+
+
 ### Download Pretrained Models
 
 ```bash
