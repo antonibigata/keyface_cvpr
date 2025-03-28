@@ -29,3 +29,6 @@ notebooks/side_by_side.ipynb
 *.pt
 *.png
 *.pth
+
+filelist_inference.txt
+filelist_inference_audio.txt

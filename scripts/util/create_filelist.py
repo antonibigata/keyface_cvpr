@@ -31,11 +31,17 @@ parser.add_argument(
     required=False,
 )
 
-parser.add_argument("--ext", type=str, help="the file extension", default=".mp4")
+parser.add_argument(
+    "--ext", type=str, nargs="+", help="the file extension(s)", default=[".mp4"]
+)
 
-parser.add_argument("--additional_filter", nargs="+", help="more filters for video", default=[])
+parser.add_argument(
+    "--additional_filter", nargs="+", help="more filters for video", default=[]
+)
 
-parser.add_argument("--filter_type", type=str, help="the kind of filter", default="ends")
+parser.add_argument(
+    "--filter_type", type=str, help="the kind of filter", default="ends"
+)
 
 parser.add_argument("--train_val_test", nargs="+", type=float, default=None)
 
@@ -76,10 +82,16 @@ for root, dirs, files in os.walk(root_dir):
 
         complete_path = os.path.join(root, file)
         valid_ext = False
-        if args.ext == ".mp4":
-            valid_ext = file.endswith(".mp4") or file.lower().endswith(".mov")
-        else:
-            valid_ext = file.endswith(args.ext)
+
+        # Handle multiple extensions
+        for ext in args.ext:
+            if ext == ".mp4":
+                if file.endswith(".mp4") or file.lower().endswith(".mov"):
+                    valid_ext = True
+                    break
+            elif file.endswith(ext):
+                valid_ext = True
+                break
 
         if valid_ext and os.stat(complete_path).st_size > 0:
             if args.filter_type == "ends" and len(args.additional_filter) > 0:
@@ -114,7 +126,9 @@ else:
         train_len = int(len(ids) * args.train_val_test[0])
         val_len = math.ceil(len(ids) * args.train_val_test[1])
         test_len = math.ceil(len(ids) * args.train_val_test[2])
-        print(f"total len: {len(ids)}, train_len: {train_len}, val_len: {val_len}, test_len: {test_len}")
+        print(
+            f"total len: {len(ids)}, train_len: {train_len}, val_len: {val_len}, test_len: {test_len}"
+        )
         train_ids = ids[:train_len]
         test_ids = ids[train_len : train_len + test_len]
         val_ids = ids[train_len + test_len :]

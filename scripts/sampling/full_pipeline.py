@@ -8,7 +8,7 @@ import torch
 from einops import rearrange, repeat
 from fire import Fire
 from omegaconf import OmegaConf
-from torchvision.io import read_video
+from torchvision.io import read_video, read_image
 import torchaudio
 from safetensors.torch import load_file as load_safetensors
 
@@ -191,7 +191,6 @@ def create_pipeline_inputs(
     """
     audio_interpolation_chunks = []
     audio_image_preds = []
-    gt_chunks = []
     emotions_chunks = []
     step = num_frames - overlap
 
@@ -215,11 +214,10 @@ def create_pipeline_inputs(
     audio_interp_preds_idx = []
     for i in range(0, audio.shape[0] - num_frames + 1, step):
         try:
-            video[i + num_frames - 1]
+            audio[i + num_frames - 1]
         except IndexError:
             break  # Last chunk is smaller than num_frames
         segment_end = i + num_frames
-        gt_chunks.append(video[i:segment_end])
 
         # Process first frame of segment
         if i not in audio_image_preds_idx:
@@ -322,14 +320,12 @@ def create_pipeline_inputs(
     )
 
     return (
-        gt_chunks,
         audio_interpolation_chunks,
         audio_image_preds,
         video_emb[random_cond_idx] if video_emb is not None else None,
         video[random_cond_idx],
         emotions_chunks,
         random_cond_idx,
-        frames_needed,
         to_remove,
         audio_interp_preds_idx,
         audio_image_preds_idx_clone,
@@ -442,8 +438,8 @@ def get_audio_embeddings(
         print(f"Loaded audio embeddings from {audio_path} {audio.shape}.")
 
         # Try to load raw audio if available
-        raw_audio_path = audio_path.replace(".safetensors", ".wav").replace(
-            f"_{audio_emb_type}_emb", ""
+        raw_audio_path = audio_path.replace(
+            f"_{audio_emb_type}_emb.safetensors", ".wav"
         )
         if audio_folder is not None:
             raw_audio_path = raw_audio_path.replace(audio_emb_folder, audio_folder)
@@ -811,12 +807,11 @@ def sample_interpolation(
 def sample(
     model,
     model_keyframes,
-    video_path: Optional[str] = None,
+    input_path: Optional[str] = None,
     audio_path: Optional[str] = None,
     num_frames: Optional[int] = None,
-    num_steps: Optional[int] = None,
     resize_size: Optional[int] = None,
-    video_folder: Optional[str] = None,
+    input_folder: Optional[str] = None,
     latent_folder: Optional[str] = None,
     audio_folder: Optional[str] = None,
     audio_emb_folder: Optional[str] = None,
@@ -828,8 +823,6 @@ def sample(
     device: str = "cuda",
     output_folder: Optional[str] = None,
     strength: float = 1.0,
-    model_config: Optional[str] = None,
-    model_keyframes_config: Optional[str] = None,
     min_seconds: Optional[int] = None,
     force_uc_zero_embeddings=[
         "cond_frames",
@@ -837,8 +830,6 @@ def sample(
     ],
     chunk_size: int = None,  # Useful if the model gets OOM
     overlap: int = 1,  # Overlap between frames (i.e Multi-diffusion)
-    keyframes_ckpt: Optional[str] = None,
-    interpolation_ckpt: Optional[str] = None,
     add_zero_flag: bool = False,
     n_batch: int = 1,
     n_batch_keyframes: int = 1,
@@ -847,7 +838,6 @@ def sample(
     audio_emb_type: str = "wav2vec2",
     extra_naming: str = "",
     is_image_model: bool = False,
-    scale: list = None,
     emotion_states: Optional[list[str]] = None,
     accentuate: bool = False,
     recompute: bool = False,
@@ -873,32 +863,43 @@ def sample(
 
     os.makedirs(output_folder, exist_ok=True)
 
+    input_type = os.path.splitext(input_path)[1]
+
     if extra_naming != "":
         video_out_name = (
-            os.path.basename(video_path).replace(".mp4", "")
+            os.path.basename(input_path).replace(input_type, "")
             + "_"
             + extra_naming
             + ".mp4"
         )
     else:
-        video_out_name = os.path.basename(video_path)
+        video_out_name = os.path.basename(input_path)
 
-    out_video_path = os.path.join(output_folder, video_out_name)
+    out_input_path = os.path.join(output_folder, video_out_name)
 
-    if os.path.exists(out_video_path) and not recompute:
-        print(f"Video already exists at {out_video_path}. Skipping.")
+    if os.path.exists(out_input_path) and not recompute:
+        print(f"Video already exists at {out_input_path}. Skipping.")
         return
 
     torch.manual_seed(seed)
 
-    video = read_video(video_path, output_format="TCHW")[0]
+    if input_type == ".mp4":
+        video = read_video(input_path, output_format="TCHW")[0]
+    elif input_type == ".png" or input_type == ".jpg":
+        # Read image to tensor
+        print(input_path)
+        video = read_image(input_path).unsqueeze(0)
+    else:
+        raise ValueError(f"Input type {input_type} not supported.")
     video = (video / 255.0) * 2.0 - 1.0
     h, w = video.shape[2:]
     video = torch.nn.functional.interpolate(video, (512, 512), mode="bilinear")
 
-    video_embedding_path = video_path.replace(".mp4", "_video_512_latent.safetensors")
-    if video_folder is not None and latent_folder is not None:
-        video_embedding_path = video_embedding_path.replace(video_folder, latent_folder)
+    video_embedding_path = input_path.replace(
+        input_type, "_video_512_latent.safetensors"
+    )
+    if input_folder is not None and latent_folder is not None:
+        video_embedding_path = video_embedding_path.replace(input_folder, latent_folder)
     video_emb = load_safetensors(video_embedding_path)["latents"].cpu()
 
     if compute_until == "end":
@@ -962,14 +963,12 @@ def sample(
         )
 
     (
-        gt_chunks,
         audio_interpolation_list,
         audio_list,
         emb,
         cond,
         emotions_chunks,
         _,
-        added_frames,
         to_remove,
         test_interpolation_list,
         test_keyframes_list,
@@ -1171,21 +1170,19 @@ def sample(
 
     complete_video = complete_video[: raw_audio.shape[0]]
 
-    assert complete_video.shape[0] == raw_audio.shape[0]
-
     if raw_audio is not None:
-        complete_audio = rearrange(raw_audio, "f s -> () (f s)")
+        complete_audio = rearrange(raw_audio[:max_frames], "f s -> () (f s)")
 
     save_audio_video(
         complete_video,
         audio=complete_audio,
         frame_rate=fps_id + 1,
         sample_rate=16000,
-        save_path=out_video_path,
+        save_path=out_input_path,
         keep_intermediate=False,
     )
 
-    print(f"Saved video to {out_video_path}")
+    print(f"Saved video to {out_input_path}")
 
 
 def get_unique_embedder_keys_from_conditioner(conditioner):
@@ -1317,7 +1314,7 @@ def main(
     num_frames: Optional[int] = None,
     num_steps: Optional[int] = None,
     resize_size: Optional[int] = None,
-    video_folder: Optional[str] = None,
+    input_folder: Optional[str] = None,
     latent_folder: Optional[str] = None,
     audio_folder: Optional[str] = None,
     audio_emb_folder: Optional[str] = None,
@@ -1377,42 +1374,42 @@ def main(
 
     # Open the filelist and read the video paths
     with open(filelist, "r") as f:
-        video_paths = f.readlines()
+        input_paths = f.readlines()
 
     # Remove the newline character from each path
-    video_paths = [path.strip() for path in video_paths]
+    input_paths = [path.strip() for path in input_paths]
 
     if filelist_audio:
         with open(filelist_audio, "r") as f:
             audio_paths = f.readlines()
+
         audio_paths = [
             path.strip()
-            .replace(video_folder, audio_folder)
-            .replace(".mp4", f"_{audio_emb_type}_emb.safetensors")
+            .replace(audio_folder, audio_emb_folder)
+            .replace(".wav", f"_{audio_emb_type}_emb.safetensors")
             for path in audio_paths
         ]
     else:
+        ext = os.path.splitext(input_paths[0])[1]
         audio_paths = [
-            video_path.replace(video_folder, audio_folder).replace(
-                ".mp4", f"_{audio_emb_type}_emb.safetensors"
+            input_path.replace(input_folder, audio_folder).replace(
+                ext, f"_{audio_emb_type}_emb.safetensors"
             )
-            for video_path in video_paths
+            for input_path in input_paths
         ]
-
     if starting_index:
-        video_paths = video_paths[starting_index:]
+        input_paths = input_paths[starting_index:]
         audio_paths = audio_paths[starting_index:]
 
-    for video_path, audio_path in zip(video_paths, audio_paths):
+    for input_path, audio_path in zip(input_paths, audio_paths):
         sample(
             model,
             model_keyframes,
-            video_path=video_path,
+            input_path=input_path,
             audio_path=audio_path,
             num_frames=num_frames,
-            num_steps=num_steps,
             resize_size=resize_size,
-            video_folder=video_folder,
+            input_folder=input_folder,
             latent_folder=latent_folder,
             audio_folder=audio_folder,
             audio_emb_folder=audio_emb_folder,
@@ -1424,14 +1421,10 @@ def main(
             device=device,
             output_folder=output_folder,
             strength=strength,
-            model_config=model_config,
-            model_keyframes_config=model_keyframes_config,
             min_seconds=min_seconds,
             force_uc_zero_embeddings=force_uc_zero_embeddings,
             chunk_size=chunk_size,
             overlap=overlap,
-            keyframes_ckpt=keyframes_ckpt,
-            interpolation_ckpt=interpolation_ckpt,
             add_zero_flag=add_zero_flag,
             n_batch=n_batch,
             n_batch_keyframes=n_batch_keyframes,

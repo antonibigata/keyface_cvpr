@@ -6,16 +6,18 @@ file_list=${2:-"filelist_val.txt"}
 keyframes_ckpt=${3:-None}
 interpolation_ckpt=${4:-None}
 compute_until=${5:-45}
+file_list_audio=${6:-None}
 
 # Run the Python script with the appropriate arguments
 python scripts/sampling/full_pipeline.py \
     --filelist=${file_list} \
+    --filelist_audio=${file_list_audio} \
     --decoding_t 1 \
     --cond_aug 0. \
     --resize_size=512 \
     --force_uc_zero_embeddings='[cond_frames, audio_emb]' \
     --latent_folder=videos \
-    --video_folder=videos \
+    --input_folder=videos \
     --model_config=scripts/sampling/configs/interpolation.yaml \
     --model_keyframes_config=scripts/sampling/configs/keyframe.yaml \
     --chunk_size=2 \

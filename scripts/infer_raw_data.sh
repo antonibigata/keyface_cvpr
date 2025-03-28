@@ -60,12 +60,12 @@ util_dir="$script_dir/util"
 video_latent_dir="video_crop_emb"
 audio_emb_dir="audio_emb"
 filelist="filelist_inference.txt"
-
+filelist_audio="filelist_inference_audio.txt"
 
 
 echo "Step 1: Computing video embeddings..."
 python $util_dir/video_to_latent.py \
-    --filelist "$video_dir/*.mp4" \
+    --filelist "$video_dir" \
 
 echo "Step 2: Computing audio embeddings..."
 python $util_dir/get_audio_embeddings.py \
@@ -87,7 +87,12 @@ echo "Step 3: Creating filelist for inference..."
 python $util_dir/create_filelist.py \
     --root_dir $video_dir \
     --dest_file $filelist \
-    --ext ".mp4"
+    --ext ".mp4" ".png" ".jpg"
+
+python $util_dir/create_filelist.py \
+    --root_dir $audio_dir \
+    --dest_file $filelist_audio \
+    --ext ".wav"
 
 echo "Step 4: Running inference..."
 $script_dir/inference.sh \
@@ -95,6 +100,7 @@ $script_dir/inference.sh \
     $filelist \
     $keyframes_ckpt \
     $interpolation_ckpt \
-    $compute_until
+    $compute_until \
+    $filelist_audio
 
 echo "Inference pipeline completed successfully!"

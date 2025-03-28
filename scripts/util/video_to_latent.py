@@ -124,8 +124,12 @@ def main():
         if filelist.endswith(".txt"):
             with open(filelist, "r") as f:
                 video_files.extend(line.strip() for line in f)
-        else:
+        elif "*" in filelist:
             video_files.extend(glob.glob(filelist))
+        else:
+            video_files.extend(glob.glob(os.path.join(filelist, "*.mp4")))
+            video_files.extend(glob.glob(os.path.join(filelist, "*.png")))
+            video_files.extend(glob.glob(os.path.join(filelist, "*.jpg")))
 
     model = VaeWrapper(args.diffusion_type)
     random.shuffle(video_files)
